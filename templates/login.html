@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Block</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-body">
+  <main class="login-card">
+    <h1>🏘️ My Block</h1>
+    <p class="tagline">Borrow &amp; lend tools with neighbours you actually trust.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="post">
+      <label>Your name
+        <input type="text" name="name" placeholder="e.g. Brett" required>
+      </label>
+      <label>Password
+        <input type="password" name="password" required>
+      </label>
+      <button type="submit">Log in</button>
+    </form>
+
+    <p class="switch-link">New here? <a href="{{ url_for('signup') }}">Sign up with your street's invite code</a></p>
+  </main>
+</body>
+</html>

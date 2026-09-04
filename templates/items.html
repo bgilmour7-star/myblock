@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Browse — My Block{% endblock %}
+{% block content %}
+  <h1>What's around the block</h1>
+
+  {% if not items %}
+    <p class="empty">Nothing listed yet. Be the first — <a href="{{ url_for('new_item') }}">list a tool</a>.</p>
+  {% endif %}
+
+  <div class="grid">
+    {% for item in items %}
+      <div class="card item-card status-{{ item['status'] }}">
+        {% if item['photo_url'] %}
+          <img class="item-photo" src="{{ item['photo_url'] }}" alt="{{ item['name'] }}">
+        {% else %}
+          <div class="item-photo placeholder">🔧</div>
+        {% endif %}
+        <div class="card-body">
+          <h3>{{ item['name'] }}</h3>
+          <div class="meta">{{ item['category'] }} · owned by {{ item['owner_name'] }}</div>
+          {% if item['description'] %}<p class="desc">{{ item['description'] }}</p>{% endif %}
+
+          {% if item['status'] == 'available' %}
+            <span class="badge badge-available">Available</span>
+            {% if item['owner_id'] != user['id'] %}
+              <form method="post" action="{{ url_for('request_item', item_id=item['id']) }}">
+                <button type="submit">Request to borrow</button>
+              </form>
+            {% endif %}
+          {% elif item['status'] == 'requested' %}
+            <span class="badge badge-requested">Requested</span>
+          {% else %}
+            <span class="badge badge-loan">On loan</span>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

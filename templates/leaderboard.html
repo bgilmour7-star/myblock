@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Karma — My Block{% endblock %}
+{% block content %}
+  <h1>Block karma</h1>
+  <p class="tagline">Earned one point at a time, one completed loan at a time.</p>
+
+  <div class="list">
+    {% for u in users %}
+      <div class="row-card leaderboard-row {% if u['id'] == user['id'] %}me{% endif %}">
+        <div class="rank">#{{ loop.index }}</div>
+        <div class="who">
+          <strong>{{ u['name'] }}{% if u['id'] == user['id'] %} (you){% endif %}</strong>
+          <div class="meta">{{ u['karma_points']|badge }}</div>
+        </div>
+        <div class="points">{{ u['karma_points'] }} pts</div>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

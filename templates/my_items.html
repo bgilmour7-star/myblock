@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}My items — My Block{% endblock %}
+{% block content %}
+  <h1>My items</h1>
+
+  <section>
+    <h2>Requests to approve</h2>
+    {% if not pending_requests %}
+      <p class="empty">No pending requests right now.</p>
+    {% else %}
+      <div class="list">
+        {% for loan in pending_requests %}
+          <div class="row-card">
+            <div>
+              <strong>{{ loan['item_name'] }}</strong> — requested by {{ loan['borrower_name'] }}
+              <div class="meta">{{ loan['status']|capitalize }}</div>
+            </div>
+            <div class="actions">
+              {% if loan['status'] == 'pending' %}
+                <form method="post" action="{{ url_for('approve_loan', loan_id=loan['id']) }}">
+                  <button type="submit">Approve</button>
+                </form>
+                <form method="post" action="{{ url_for('decline_loan', loan_id=loan['id']) }}">
+                  <button type="submit" class="secondary">Decline</button>
+                </form>
+              {% elif loan['status'] == 'approved' %}
+                <form method="post" action="{{ url_for('return_loan', loan_id=loan['id']) }}">
+                  <button type="submit">Mark returned (+1 karma)</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </section>
+
+  <section>
+    <h2>Things I've requested</h2>
+    {% if not my_borrow_requests %}
+      <p class="empty">You haven't requested anything yet.</p>
+    {% else %}
+      <div class="list">
+        {% for loan in my_borrow_requests %}
+          <div class="row-card">
+            <div>
+              <strong>{{ loan['item_name'] }}</strong> — from {{ loan['owner_name'] }}
+              <div class="meta">{{ loan['status']|capitalize }}</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </section>
+
+  <section>
+    <h2>Everything I've listed</h2>
+    {% if not owned_items %}
+      <p class="empty">You haven't listed anything yet — <a href="{{ url_for('new_item') }}">list your first item</a>.</p>
+    {% else %}
+      <div class="list">
+        {% for item in owned_items %}
+          <div class="row-card">
+            <div>
+              <strong>{{ item['name'] }}</strong>
+              <div class="meta">{{ item['category'] }} · {{ item['status']|replace('_', ' ')|capitalize }}</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}
