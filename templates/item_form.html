@@ -8,13 +8,7 @@
     </label>
     <label>Category
       <select name="category">
-        <option>Power tools</option>
-        <option>Hand tools</option>
-        <option>Yard &amp; garden</option>
-        <option>Ladders &amp; access</option>
-        <option>Cleaning</option>
-        <option>Party &amp; events</option>
-        <option>Other</option>
+        {% for c in categories %}<option>{{ c }}</option>{% endfor %}
       </select>
     </label>
     <label>Description (optional)

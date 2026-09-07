@@ -3,34 +3,93 @@
 {% block content %}
   <h1>What's around the block</h1>
 
+  <form class="search-bar" method="get" action="{{ url_for('browse_items') }}" role="search">
+    <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
+      <line x1="21" y1="21" x2="16.2" y2="16.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <input type="search" name="q" value="{{ q }}" placeholder="Search for a tool or piece of equipment…" aria-label="Search items">
+    {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+    {% if available_only %}<input type="hidden" name="available" value="1">{% endif %}
+    {% if sort != 'recommended' %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+    <button type="submit" class="search-submit">Search</button>
+  </form>
+
+  <nav class="pill-row" aria-label="Filter by category">
+    <a href="{{ url_for('browse_items', q=q or None, available=(1 if available_only else None), sort=(sort if sort != 'recommended' else None)) }}"
+       class="pill{{ ' pill-active' if not selected_category else '' }}"
+       {% if not selected_category %}aria-current="true"{% endif %}>All</a>
+    {% for c in categories %}
+      <a href="{{ url_for('browse_items', q=q or None, category=c, available=(1 if available_only else None), sort=(sort if sort != 'recommended' else None)) }}"
+         class="pill{{ ' pill-active' if selected_category == c else '' }}"
+         {% if selected_category == c %}aria-current="true"{% endif %}>{{ c }}</a>
+    {% endfor %}
+  </nav>
+
+  <div class="filter-bar">
+    <a class="toggle-pill{{ ' toggle-pill-active' if available_only else '' }}"
+       href="{{ url_for('browse_items', q=q or None, category=selected_category or None, sort=(sort if sort != 'recommended' else None), available=(None if available_only else 1)) }}"
+       aria-pressed="{{ 'true' if available_only else 'false' }}">
+      Available now
+    </a>
+    <form method="get" class="sort-form" action="{{ url_for('browse_items') }}">
+      {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+      {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+      {% if available_only %}<input type="hidden" name="available" value="1">{% endif %}
+      <label class="sort-label">Sort
+        <select name="sort" onchange="this.form.submit()">
+          <option value="recommended" {% if sort == 'recommended' %}selected{% endif %}>Recommended</option>
+          <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+        </select>
+      </label>
+    </form>
+  </div>
+
   {% if not items %}
-    <p class="empty">Nothing listed yet. Be the first — <a href="{{ url_for('new_item') }}">list a tool</a>.</p>
+    {% if filters_active %}
+      <div class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <h2>No matches</h2>
+        <p>Nothing on the block fits that search right now — try a different category, or
+          <a href="{{ url_for('browse_items') }}">clear all filters</a>.</p>
+      </div>
+    {% else %}
+      <p class="empty">Nothing listed yet. Be the first — <a href="{{ url_for('new_item') }}">list a tool</a>.</p>
+    {% endif %}
   {% endif %}
 
   <div class="grid">
     {% for item in items %}
-      <div class="card item-card status-{{ item['status'] }}">
-        {% if item['photo_url'] %}
-          <img class="item-photo" src="{{ item['photo_url'] }}" alt="{{ item['name'] }}">
-        {% else %}
-          <div class="item-photo placeholder">🔧</div>
-        {% endif %}
+      <div class="card item-card">
+        <div class="item-photo-wrap">
+          {% if item['photo_url'] %}
+            <img class="item-photo" src="{{ item['photo_url'] }}" alt="{{ item['name'] }}">
+          {% else %}
+            <div class="item-photo placeholder">🔧</div>
+          {% endif %}
+          <span class="status-pill status-pill-{{ item['status'] }}">
+            {%- if item['status'] == 'available' -%}Available
+            {%- elif item['status'] == 'requested' -%}Requested
+            {%- else -%}On loan
+            {%- endif -%}
+          </span>
+        </div>
         <div class="card-body">
           <h3>{{ item['name'] }}</h3>
-          <div class="meta">{{ item['category'] }} · owned by {{ item['owner_name'] }}</div>
+          <div class="meta">{{ item['category'] }}</div>
           {% if item['description'] %}<p class="desc">{{ item['description'] }}</p>{% endif %}
 
-          {% if item['status'] == 'available' %}
-            <span class="badge badge-available">Available</span>
-            {% if item['owner_id'] != user['id'] %}
-              <form method="post" action="{{ url_for('request_item', item_id=item['id']) }}">
-                <button type="submit">Request to borrow</button>
-              </form>
-            {% endif %}
-          {% elif item['status'] == 'requested' %}
-            <span class="badge badge-requested">Requested</span>
-          {% else %}
-            <span class="badge badge-loan">On loan</span>
+          <div class="owner-row">
+            <span class="owner-name">{{ item['owner_name'] }}</span>
+            <span class="owner-badge">{{ item['owner_karma']|badge }}</span>
+          </div>
+
+          {% if item['owner_id'] == user['id'] %}
+            <span class="you-own-this">This is your listing</span>
+          {% elif item['status'] == 'available' %}
+            <form method="post" action="{{ url_for('request_item', item_id=item['id']) }}">
+              <button type="submit">Request to borrow</button>
+            </form>
           {% endif %}
         </div>
       </div>

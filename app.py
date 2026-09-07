@@ -51,6 +51,25 @@ BADGE_TIERS = [
     (11, "Block Legend"),
 ]
 
+# Single source of truth for item categories — used by both the listing form and the
+# browse-page filter pills, so the two can never drift out of sync.
+CATEGORIES = [
+    "Power tools",
+    "Hand tools",
+    "Yard & garden",
+    "Ladders & access",
+    "Cleaning",
+    "Party & events",
+    "Other",
+]
+
+# Browse-page sort options: label -> SQL ORDER BY clause. Keyed by a whitelist so the
+# query string can never inject arbitrary SQL — only these exact fragments are ever used.
+SORT_OPTIONS = {
+    "recommended": "CASE items.status WHEN 'available' THEN 0 ELSE 1 END, items.created_at DESC",
+    "newest": "items.created_at DESC",
+}
+
 app = Flask(__name__)
 app.config["SECRET_KEY"] = SECRET_KEY
 app.config["MAX_CONTENT_LENGTH"] = MAX_PHOTO_BYTES + 200 * 1024  # small buffer for form fields
@@ -262,17 +281,50 @@ def upload_photo(file_storage):
 def browse_items():
     db = get_db()
     user = current_user()
+
+    q = request.args.get("q", "").strip()
+    category = request.args.get("category", "").strip()
+    if category not in CATEGORIES:
+        category = ""
+    available_only = request.args.get("available") == "1"
+    sort = request.args.get("sort", "recommended")
+    if sort not in SORT_OPTIONS:
+        sort = "recommended"
+
+    conditions = []
+    params = []
+    if q:
+        conditions.append("(items.name ILIKE %s OR items.description ILIKE %s)")
+        params.extend([f"%{q}%", f"%{q}%"])
+    if category:
+        conditions.append("items.category = %s")
+        params.append(category)
+    if available_only:
+        conditions.append("items.status = 'available'")
+    where_sql = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+
     items = db.execute(
-        """
-        SELECT items.*, users.name AS owner_name
+        f"""
+        SELECT items.*, users.name AS owner_name, users.karma_points AS owner_karma
         FROM items
         JOIN users ON users.id = items.owner_id
-        ORDER BY
-            CASE status WHEN 'available' THEN 0 ELSE 1 END,
-            items.created_at DESC
-        """
+        {where_sql}
+        ORDER BY {SORT_OPTIONS[sort]}
+        """,
+        params,
     ).fetchall()
-    return render_template("items.html", items=items, user=user)
+
+    return render_template(
+        "items.html",
+        items=items,
+        user=user,
+        categories=CATEGORIES,
+        q=q,
+        selected_category=category,
+        available_only=available_only,
+        sort=sort,
+        filters_active=bool(q or category or available_only),
+    )
 
 
 @app.route("/items/new", methods=["GET", "POST"])
@@ -280,16 +332,18 @@ def new_item():
     user = current_user()
     if request.method == "POST":
         name = request.form.get("name", "").strip()
-        category = request.form.get("category", "Other").strip() or "Other"
+        category = request.form.get("category", "Other").strip()
+        if category not in CATEGORIES:
+            category = "Other"
         description = request.form.get("description", "").strip()
 
         if not name:
             flash("Give the item a name.", "error")
-            return render_template("item_form.html")
+            return render_template("item_form.html", categories=CATEGORIES)
 
         photo_url = upload_photo(request.files.get("photo"))
         if photo_url is None:
-            return render_template("item_form.html")
+            return render_template("item_form.html", categories=CATEGORIES)
 
         db = get_db()
         db.execute(
@@ -301,7 +355,7 @@ def new_item():
         flash(f'"{name}" is now listed for the block to borrow.', "success")
         return redirect(url_for("browse_items"))
 
-    return render_template("item_form.html")
+    return render_template("item_form.html", categories=CATEGORIES)
 
 
 @app.route("/items/<int:item_id>/request", methods=["POST"])
