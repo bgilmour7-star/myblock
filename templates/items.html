@@ -61,24 +61,27 @@
   <div class="grid">
     {% for item in items %}
       <div class="card item-card">
-        <div class="item-photo-wrap">
-          {% if item['photo_url'] %}
-            <img class="item-photo" src="{{ item['photo_url'] }}" alt="{{ item['name'] }}">
-          {% else %}
-            <div class="item-photo placeholder">🔧</div>
-          {% endif %}
-          <span class="status-pill status-pill-{{ item['status'] }}">
-            {%- if item['status'] == 'available' -%}Available
-            {%- elif item['status'] == 'requested' -%}Requested
-            {%- else -%}On loan
-            {%- endif -%}
-          </span>
-        </div>
-        <div class="card-body">
-          <h3>{{ item['name'] }}</h3>
-          <div class="meta">{{ item['category'] }}</div>
-          {% if item['description'] %}<p class="desc">{{ item['description'] }}</p>{% endif %}
-
+        <a class="item-link" href="{{ url_for('item_detail', item_id=item['id']) }}">
+          <div class="item-photo-wrap">
+            {% if item['photo_url'] %}
+              <img class="item-photo" src="{{ item['photo_url'] }}" alt="{{ item['name'] }}">
+            {% else %}
+              <div class="item-photo placeholder">🔧</div>
+            {% endif %}
+            <span class="status-pill status-pill-{{ item['status'] }}">
+              {%- if item['status'] == 'available' -%}Available
+              {%- elif item['status'] == 'requested' -%}Requested
+              {%- else -%}On loan
+              {%- endif -%}
+            </span>
+          </div>
+          <div class="card-body-top">
+            <h3>{{ item['name'] }}</h3>
+            <div class="meta">{{ item['category'] }}</div>
+            {% if item['description'] %}<p class="desc">{{ item['description'] }}</p>{% endif %}
+          </div>
+        </a>
+        <div class="card-body-bottom">
           <div class="owner-row">
             <span class="owner-name">{{ item['owner_name'] }}</span>
             <span class="owner-badge">{{ item['owner_karma']|badge }}</span>

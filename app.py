@@ -346,6 +346,25 @@ def browse_items():
     )
 
 
+@app.route("/items/<int:item_id>")
+def item_detail(item_id):
+    db = get_db()
+    user = current_user()
+    item = db.execute(
+        """
+        SELECT items.*, users.name AS owner_name, users.karma_points AS owner_karma
+        FROM items
+        JOIN users ON users.id = items.owner_id
+        WHERE items.id = %s
+        """,
+        (item_id,),
+    ).fetchone()
+    if item is None:
+        flash("That item doesn't exist anymore.", "error")
+        return redirect(url_for("browse_items"))
+    return render_template("item_detail.html", item=item, user=user)
+
+
 @app.route("/items/new", methods=["GET", "POST"])
 def new_item():
     user = current_user()

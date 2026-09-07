@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ item['name'] }} — My Block{% endblock %}
+{% block content %}
+  <a class="back-link" href="{{ url_for('browse_items') }}">← Back to browse</a>
+
+  <div class="detail-card">
+    <div class="detail-photo-wrap">
+      {% if item['photo_url'] %}
+        <img class="detail-photo" src="{{ item['photo_url'] }}" alt="{{ item['name'] }}">
+      {% else %}
+        <div class="detail-photo placeholder">🔧</div>
+      {% endif %}
+      <span class="status-pill status-pill-{{ item['status'] }}">
+        {%- if item['status'] == 'available' -%}Available
+        {%- elif item['status'] == 'requested' -%}Requested
+        {%- else -%}On loan
+        {%- endif -%}
+      </span>
+    </div>
+
+    <div class="detail-body">
+      <h1>{{ item['name'] }}</h1>
+      <div class="meta">{{ item['category'] }}</div>
+
+      <div class="owner-row">
+        <span class="owner-name">{{ item['owner_name'] }}</span>
+        <span class="owner-badge">{{ item['owner_karma']|badge }}</span>
+      </div>
+
+      {% if item['description'] %}
+        <p class="detail-desc">{{ item['description'] }}</p>
+      {% else %}
+        <p class="detail-desc empty">No description added yet.</p>
+      {% endif %}
+
+      {% if item['owner_id'] == user['id'] %}
+        <p class="you-own-this">This is your listing — manage it from <a href="{{ url_for('my_items') }}">My items</a>.</p>
+      {% elif item['status'] == 'available' %}
+        <form method="post" action="{{ url_for('request_item', item_id=item['id']) }}">
+          <button type="submit">Request to borrow</button>
+        </form>
+      {% else %}
+        <p class="empty">Someone already has dibs on this one.</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
