@@ -22,9 +22,14 @@
     <form method="post">
       <label>Your name
         <input type="text" name="name" placeholder="e.g. Brett" required>
+        <span class="field-hint">Shown to neighbours on your listings and the leaderboard.</span>
+      </label>
+      <label>Email
+        <input type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+        <span class="field-hint">Used to log in — never shown to other neighbours.</span>
       </label>
       <label>Choose a password
-        <input type="password" name="password" required>
+        <input type="password" name="password" autocomplete="new-password" required>
       </label>
       <label>Street invite code
         <input type="text" name="invite" required>

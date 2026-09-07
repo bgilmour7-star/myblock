@@ -1,7 +1,7 @@
 # My Block
 
 A tiny web app for lending tools and equipment with neighbours you trust. Real accounts
-(name + password, gated by a shared street invite code), photo uploads, and karma points
+(email + password, gated by a shared street invite code), photo uploads, and karma points
 for people who lend a lot. No monetization, no third-party auth service.
 
 ## Stack (all free-tier)
@@ -17,8 +17,9 @@ outgrow this by a lot.
 
 ## What it does
 
-- **Real accounts** — sign up with your name and a password, gated behind a shared street
-  invite code so randoms can't join. After that, everyone logs in with their own password.
+- **Real accounts** — sign up with your name, email, and a password, gated behind a shared
+  street invite code so randoms can't join. Email is only used to log in — the name you pick
+  is what neighbours see on your listings and the leaderboard.
 - **List items** — name, category, description, and an actual photo upload (stored in
   Vercel Blob, not just a pasted link).
 - **Browse & request** — neighbours browse what's available and tap "Request to borrow."

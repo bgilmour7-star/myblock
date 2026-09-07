@@ -121,12 +121,20 @@ def ensure_schema():
         """
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
-            name TEXT UNIQUE NOT NULL,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL,
             password_hash TEXT NOT NULL,
             karma_points INTEGER NOT NULL DEFAULT 0,
             created_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
         """
+    )
+    # Migrate a table created before email-based login existed. Safe to run every time:
+    # ADD COLUMN/DROP CONSTRAINT/CREATE INDEX are all no-ops once already applied.
+    db.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT")
+    db.execute("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_name_key")
+    db.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_idx ON users (LOWER(email))"
     )
     db.execute(
         """
@@ -186,11 +194,16 @@ def require_login():
 def signup():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
         invite = request.form.get("invite", "").strip()
 
-        if not name or not password:
-            flash("Enter a name and a password.", "error")
+        if not name or not email or not password:
+            flash("Enter your name, email, and a password.", "error")
+            return render_template("signup.html")
+
+        if "@" not in email:
+            flash("That doesn't look like a valid email address.", "error")
             return render_template("signup.html")
 
         if invite != INVITE_CODE:
@@ -198,17 +211,21 @@ def signup():
             return render_template("signup.html")
 
         db = get_db()
-        existing = db.execute("SELECT id FROM users WHERE name = %s", (name,)).fetchone()
+        existing = db.execute(
+            "SELECT id FROM users WHERE LOWER(email) = LOWER(%s)", (email,)
+        ).fetchone()
         if existing:
-            flash("That name is already taken — log in instead, or use a different name.", "error")
+            flash("An account with that email already exists — log in instead.", "error")
             return render_template("signup.html")
 
         db.execute(
-            "INSERT INTO users (name, password_hash, karma_points) VALUES (%s, %s, 0)",
-            (name, generate_password_hash(password)),
+            "INSERT INTO users (name, email, password_hash, karma_points) VALUES (%s, %s, %s, 0)",
+            (name, email, generate_password_hash(password)),
         )
         db.commit()
-        user = db.execute("SELECT * FROM users WHERE name = %s", (name,)).fetchone()
+        user = db.execute(
+            "SELECT * FROM users WHERE LOWER(email) = LOWER(%s)", (email,)
+        ).fetchone()
         session["user_id"] = user["id"]
         return redirect(url_for("browse_items"))
 
@@ -218,14 +235,16 @@ def signup():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
 
         db = get_db()
-        user = db.execute("SELECT * FROM users WHERE name = %s", (name,)).fetchone()
+        user = db.execute(
+            "SELECT * FROM users WHERE LOWER(email) = LOWER(%s)", (email,)
+        ).fetchone()
 
         if user is None or not check_password_hash(user["password_hash"], password):
-            flash("That name/password combination doesn't match.", "error")
+            flash("That email/password combination doesn't match.", "error")
             return render_template("login.html")
 
         session["user_id"] = user["id"]

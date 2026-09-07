@@ -20,11 +20,11 @@
     {% endwith %}
 
     <form method="post">
-      <label>Your name
-        <input type="text" name="name" placeholder="e.g. Brett" required>
+      <label>Email
+        <input type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
       </label>
       <label>Password
-        <input type="password" name="password" required>
+        <input type="password" name="password" autocomplete="current-password" required>
       </label>
       <button type="submit">Log in</button>
     </form>

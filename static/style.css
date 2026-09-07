@@ -310,5 +310,6 @@ input, select, textarea {
   max-width: 360px;
 }
 .login-card h1 { margin-top: 0; }
+.field-hint { font-size: 0.78rem; color: var(--muted); font-weight: 400; }
 .login-card form { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
 .switch-link { margin-top: 16px; font-size: 0.88rem; color: var(--muted); text-align: center; }
